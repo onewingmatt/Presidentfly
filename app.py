@@ -1041,36 +1041,44 @@ def on_create(data):
             print(f"[CREATE] Player {name} rejoining")
             game.rejoin_player(existing_player_id, request.sid, name)
         else:
+            # CRITICAL FIX: Transfer CPU hand BEFORE deleting CPU
             cpu_players = [pid for pid, p in game.players.items() if p.is_cpu]
-
             if cpu_players:
                 cpu_id = cpu_players[0]
                 cpu_player = game.players[cpu_id]
 
                 print(f"[CREATE] Replacing CPU {cpu_id} with player {name}")
+                print(f"[DEBUG] CPU has {len(cpu_player.hand)} cards to transfer")
 
-                # Transfer CPU's hand to new player
+                # Create new player with SAME ID first, then update details
                 new_player = Player(request.sid, name, is_cpu=False)
-                new_player.hand = list(cpu_player.hand)  # COPY HAND
+
+                # IMPORTANT: Transfer all state from CPU to new player BEFORE deletion
+                new_player.hand = list(cpu_player.hand)  # Deep copy hand
                 new_player.role = cpu_player.role
                 new_player.passed = cpu_player.passed
                 new_player.finished_position = cpu_player.finished_position
 
+                print(f"[DEBUG] New player now has {len(new_player.hand)} cards")
+
+                # Update game.players dict - replace CPU with new player
                 game.players[request.sid] = new_player
                 del game.players[cpu_id]
 
-                # Update player order
+                # Update player order lists
                 if cpu_id in game.player_order:
                     idx = game.player_order.index(cpu_id)
                     game.player_order[idx] = request.sid
+                    print(f"[DEBUG] Updated player_order at index {idx}")
 
                 if cpu_id in game.original_player_order:
                     idx = game.original_player_order.index(cpu_id)
                     game.original_player_order[idx] = request.sid
+                    print(f"[DEBUG] Updated original_player_order at index {idx}")
 
                 game.human_player_id = request.sid
 
-                print(f"[CREATE] Player {name} now has {len(new_player.hand)} cards")
+                print(f"[DEBUG] Player {name} replacement complete. Hand size: {len(game.players[request.sid].hand)}")
             else:
                 emit('error', {'msg': 'Game is full'})
                 return
