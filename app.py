@@ -140,20 +140,20 @@ def compare_melds(played_meld, table_meld):
     if ptype == "SINGLE":
         played_card = played_meld[0]
         table_card = table_meld[0]
-        # Wild card hierarchy logic
-        # JD > Black 3 > 2 > normal cards
-        if game_options.get('jd_wild', False) and played_card.rank == Rank.JACK and played_card.suit == Suit.DIAMONDS:
-            return True, "JD wild beats all"
+        # Enforce jd can only be played on black 3
+        if table_card.rank == Rank.THREE and table_card.suit in [Suit.SPADES, Suit.CLUBS]:
+            if not (game_options.get('jd_wild', False) and played_card.rank == Rank.JACK and played_card.suit == Suit.DIAMONDS):
+                return False, "Can only play JD on Black 3"
+        # Treat black 3 as wild but only beaten by jd
         if game_options.get('black_3s_wild', False) and played_card.rank == Rank.THREE and played_card.suit in [Suit.SPADES, Suit.CLUBS]:
-            # beats any single card 2 or lower
-            if not (table_card.rank == Rank.JACK and table_card.suit == Suit.DIAMONDS):
-                if table_card.rank.value[0] <= Rank.TWO.value[0]:
-                    return True, "Black 3 wild beats low"
+            if table_card.rank == Rank.JACK and table_card.suit == Suit.DIAMONDS:
+                return False, "JD beats Black 3"
+            return True, "Black 3 wild beats any single except JD"
+        # 2s wild
         if game_options.get('twos_wild', True) and played_card.rank == Rank.TWO:
             if table_card.rank.value[0] < Rank.THREE.value[0]:
-                return True, "Two wild beats normal low card"
-
-        # Normal rank comparison
+                return True, "Two wild beats normal card"
+        # Normal compare
         if played_card.rank.value[0] > table_card.rank.value[0]:
             return True, "Valid single"
         else:
