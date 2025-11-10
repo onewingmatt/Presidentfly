@@ -125,28 +125,6 @@ def get_meld_type(cards):
     valid, mtype = is_valid_meld(cards)
     return mtype if valid else None
 
-def get_card_rank_with_wilds(card, game_options):
-    """Get effective rank considering wild card rules."""
-    rank = card.rank.value[0]
-
-    if card.rank == Rank.TWO:
-        if game_options.get('twos_wild', True):
-            return 20  # Highest rank
-        return rank
-
-    if card.rank == Rank.THREE:
-        if card.suit == Suit.SPADES or card.suit == Suit.CLUBS:  # Black 3s
-            if game_options.get('black_3s_wild', False):
-                return 19  # Second highest
-        return rank
-
-    if card.rank == Rank.JACK and card.suit == Suit.DIAMONDS:  # JD
-        if game_options.get('jd_wild', False):
-            return 18  # Third highest
-        return rank
-
-    return rank
-
 def compare_melds(played_meld, table_meld):
     """Check if played_meld beats table_meld. Returns (is_valid, reason_str)"""
     
@@ -190,11 +168,6 @@ def compare_melds(played_meld, table_meld):
 
 class Game:
     def __init__(self, game_id):
-        self.game_options = {
-            'twos_wild': True,      # 2s are wild (beats all)
-            'black_3s_wild': False, # Black 3s are wild (beat 2s)
-            'jd_wild': False        # Jack of Diamonds is wild (beats black 3s)
-        }
         self.game_id = game_id
         self.players = {}
         self.player_order = []
@@ -870,7 +843,6 @@ class Game:
             'exchange_state': self.get_exchange_state_str(),
             'pending_exchanges': {},
             'exchanges_complete': self.exchanges_complete,
-        'game_options': self.game_options,
         }
     
     @classmethod
@@ -899,7 +871,6 @@ class Game:
         game.exchange_state_enum = None
         game.pending_exchanges = {}
         game.exchanges_complete = data['exchanges_complete']
-        game.game_options = data.get('game_options', {'twos_wild': True, 'black_3s_wild': False, 'jd_wild': False})
         game.cpu_playing = False
         game._showing_2 = False
         
@@ -1053,10 +1024,6 @@ def on_connect():
 def on_create(data):
     name = data.get('name', 'Player')
     cpus = data.get('cpus', 2)
-        game_options = data.get('game_options', {})
-        twos_wild = game_options.get('twos_wild', True)
-        black_3s_wild = game_options.get('black_3s_wild', False)
-        jd_wild = game_options.get('jd_wild', False)
     custom_table_id = data.get('table_id', None)
     
     if custom_table_id and custom_table_id.strip():
@@ -1311,12 +1278,5 @@ def on_cpu_play():
         game.cpu_playing = False
 
 if __name__ == '__main__':
-    try:
-        port = int(os.getenv('PORT', 8080))
-        print(f"Starting app on port {port}...")
-        socketio.run(app, debug=False, host='0.0.0.0', port=port)
-    except Exception as e:
-        print(f"ERROR: {e}")
-        import traceback
-        traceback.print_exc()
-        raise
+    port = int(os.getenv('PORT', 8080))
+    socketio.run(app, debug=False, host='0.0.0.0', port=port)
