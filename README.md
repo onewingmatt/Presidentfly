@@ -2,17 +2,11 @@
 
 A web-based multiplayer card game with Flask and SocketIO.
 
-## Features
+## Fix red 3 CPU hang and player join card assignment
 
-- Wild card options all enabled by default
+## Deploy with fly.io Docker
 
-## Deployment
-
-Configured for Fly.io deployment using Docker.
-
-## Local development
-
-```
+```bash
 pip install -r requirements.txt
 python app.py
 ```
