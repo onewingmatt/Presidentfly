@@ -1278,5 +1278,12 @@ def on_cpu_play():
         game.cpu_playing = False
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 8080))
-    socketio.run(app, debug=False, host='0.0.0.0', port=port)
+    try:
+        port = int(os.getenv('PORT', 8080))
+        print(f"Starting app on port {port}...")
+        socketio.run(app, debug=False, host='0.0.0.0', port=port)
+    except Exception as e:
+        print(f"ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
