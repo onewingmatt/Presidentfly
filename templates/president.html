@@ -548,6 +548,68 @@
     </style>
 </head>
 <body>
+    <div id="toggleContainer" style="position: fixed; top: 10px; right: 10px; z-index: 50;">
+        <button id="toggleOptionsBtn" style="padding: 8px 12px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+            Show Options
+        </button>
+    </div>
+
+    <div id="optionsPanel" style="position: fixed; right: 10px; top: 50px; background: #f0f0f0; border: 2px solid #333; padding: 15px; border-radius: 8px; max-width: 200px; font-size: 12px; z-index: 100; display: none;">
+        <h3 style="margin-top: 0; margin-bottom: 10px; font-size: 14px;">Game Options</h3>
+        <div style="margin-bottom: 8px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" id="opt_twos_wild" checked style="margin-right: 6px;">
+                <strong>2s Wild</strong>
+            </label>
+        </div>
+        <div style="margin-bottom: 8px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" id="opt_black3s_wild" checked style="margin-right: 6px;">
+                <strong>Black 3s Wild</strong>
+            </label>
+        </div>
+        <div style="margin-bottom: 8px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" id="opt_jd_wild" checked style="margin-right: 6px;">
+                <strong>JD Wild</strong>
+            </label>
+        </div>
+        <button id="restartBtn" style="width: 100%; padding: 8px; margin-top: 10px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;">
+            Restart Hand
+        </button>
+    </div>
+
+    <script>
+        document.getElementById('toggleOptionsBtn').addEventListener('click', function() {
+            var panel = document.getElementById('optionsPanel');
+            var btn = document.getElementById('toggleOptionsBtn');
+            if (panel.style.display === 'none' || panel.style.display === '') {
+                panel.style.display = 'block';
+                btn.textContent = 'Hide Options';
+            } else {
+                panel.style.display = 'none';
+                btn.textContent = 'Show Options';
+            }
+        });
+
+        document.getElementById('restartBtn').addEventListener('click', function() {
+            const twos_wild = document.getElementById('opt_twos_wild').checked;
+            const black_3s_wild = document.getElementById('opt_black3s_wild').checked;
+            const jd_wild = document.getElementById('opt_jd_wild').checked;
+
+            const game_options = {
+                twos_wild: twos_wild,
+                black_3s_wild: black_3s_wild,
+                jd_wild: jd_wild
+            };
+
+            console.log('Restarting hand with options:', game_options);
+            if (typeof socket !== 'undefined') {
+                socket.emit('restart_hand_with_options', { game_options: game_options });
+            }
+        });
+    </script>
+
     <div class="container">
         <div class="header">
             <h1>President Card Game</h1>

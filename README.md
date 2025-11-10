@@ -1,6 +1,6 @@
 # President Card Game
 
-## Fixed player join to inherit hand
+## Fixed player join hand bug + restored options menu
 
 Deploy with:
 ```

@@ -1025,55 +1025,77 @@ def on_create(data):
     name = data.get('name', 'Player')
     cpus = data.get('cpus', 2)
     custom_table_id = data.get('table_id', None)
-    
+
     if custom_table_id and custom_table_id.strip():
         gid = custom_table_id.strip().lower()
     else:
         gid = secrets.token_hex(4)
-    
+
     existing_game = load_game_from_disk(gid)
-    
+
     if existing_game:
         game = existing_game
         existing_player_id, existing_player = game.find_player_by_name(name)
-        
+
         if existing_player_id:
             print(f"[CREATE] Player {name} rejoining")
             game.rejoin_player(existing_player_id, request.sid, name)
         else:
             cpu_players = [pid for pid, p in game.players.items() if p.is_cpu]
+
             if cpu_players:
                 cpu_id = cpu_players[0]
+                cpu_player = game.players[cpu_id]
+
                 print(f"[CREATE] Replacing CPU {cpu_id} with player {name}")
+
+                # Transfer CPU's hand to new player
+                new_player = Player(request.sid, name, is_cpu=False)
+                new_player.hand = list(cpu_player.hand)  # COPY HAND
+                new_player.role = cpu_player.role
+                new_player.passed = cpu_player.passed
+                new_player.finished_position = cpu_player.finished_position
+
+                game.players[request.sid] = new_player
                 del game.players[cpu_id]
+
+                # Update player order
                 if cpu_id in game.player_order:
                     idx = game.player_order.index(cpu_id)
                     game.player_order[idx] = request.sid
+
                 if cpu_id in game.original_player_order:
                     idx = game.original_player_order.index(cpu_id)
                     game.original_player_order[idx] = request.sid
-                game.add_player(request.sid, name, is_cpu=False)
+
+                game.human_player_id = request.sid
+
+                print(f"[CREATE] Player {name} now has {len(new_player.hand)} cards")
             else:
                 emit('error', {'msg': 'Game is full'})
                 return
     else:
         game = Game(gid)
         game.add_player(request.sid, name, is_cpu=False)
+
         for i in range(cpus):
             cpu_id = f'cpu_{i}_{secrets.token_hex(2)}'
             game.add_player(cpu_id, f'CPU-{i+1}', is_cpu=True)
+
         if game.can_start():
             game.start_round()
-    
+
     games[gid] = game
     join_room(gid)
     session['game_id'] = gid
+
     save_game_to_disk(game)
-    
+
     state = game.get_state()
+
     emit('created', {'game_id': gid, 'state': state})
     socketio.emit('update', {'state': state}, to=gid, skip_sid=request.sid)
-    
+
     current = game.get_current_player()
     if current and current.is_cpu:
         socketio.emit('cpu_turn', {}, to=gid)
