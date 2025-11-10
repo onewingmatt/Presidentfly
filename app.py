@@ -167,9 +167,6 @@ def compare_melds(played_meld, table_meld):
     return False, "Unknown error"
 
 class Game:
-    def reorder_hand(self):
-        self.hand.sort(key=lambda card: get_card_rank_with_wilds(card, self.game_options), reverse=True)
-
     def __init__(self, game_id):
         self.game_id = game_id
         self.players = {}
@@ -1279,6 +1276,38 @@ def on_cpu_play():
                 socketio.emit('cpu_turn', {}, to=gid)
     finally:
         game.cpu_playing = False
+
+
+@socketio.on('restart_hand_with_options')
+def on_restart_hand_with_options(data):
+    gid = session.get('game_id')
+    if gid not in games:
+        emit('error', {'msg': 'Game not found'})
+        return
+
+    game = games[gid]
+    game_options = data.get('game_options', {})
+
+    # Update game options
+    game.game_options = {
+        'twos_wild': game_options.get('twos_wild', True),
+        'black_3s_wild': game_options.get('black_3s_wild', False),
+        'jd_wild': game_options.get('jd_wild', False)
+    }
+
+    print(f"[RESTART] Game options updated: {game.game_options}")
+
+    # Restart the hand with preserved roles
+    game.start_round(preserve_roles=True)
+
+    save_game_to_disk(game)
+
+    socketio.emit('update', {'state': game.get_state()}, to=gid)
+
+    current = game.get_current_player()
+    if current and current.is_cpu:
+        socketio.emit('cpu_turn', {}, to=gid)
+
 
 if __name__ == '__main__':
     socketio.run(app, debug=False, host='0.0.0.0', port=5000)
