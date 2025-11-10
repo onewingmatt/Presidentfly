@@ -167,6 +167,9 @@ def compare_melds(played_meld, table_meld):
     return False, "Unknown error"
 
 class Game:
+    def reorder_hand(self):
+        self.hand.sort(key=lambda card: get_card_rank_with_wilds(card, self.game_options), reverse=True)
+
     def __init__(self, game_id):
         self.game_id = game_id
         self.players = {}
@@ -1278,5 +1281,4 @@ def on_cpu_play():
         game.cpu_playing = False
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 8080))
-    socketio.run(app, debug=False, host='0.0.0.0', port=port)
+    socketio.run(app, debug=False, host='0.0.0.0', port=5000)
