@@ -4,16 +4,15 @@ A web-based multiplayer card game with Flask and SocketIO.
 
 ## Features
 
-- Wild card options for 2s, black 3s, JD
-- Runs forbidden to include 2s or 3s
+- Wild card options all enabled by default
 
 ## Deployment
 
-Configured for Fly.io deployment.
+Configured for Fly.io deployment using Docker.
 
-## Local Development
+## Local development
 
-```sh
+```
 pip install -r requirements.txt
 python app.py
 ```
