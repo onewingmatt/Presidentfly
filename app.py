@@ -1025,34 +1025,70 @@ def on_create(data):
     name = data.get('name', 'Player')
     cpus = data.get('cpus', 2)
     custom_table_id = data.get('table_id', None)
-    
+
     if custom_table_id and custom_table_id.strip():
         gid = custom_table_id.strip().lower()
     else:
         gid = secrets.token_hex(4)
-    
+
     existing_game = load_game_from_disk(gid)
-    
+
     if existing_game:
         game = existing_game
         existing_player_id, existing_player = game.find_player_by_name(name)
-        
+
         if existing_player_id:
             print(f"[CREATE] Player {name} rejoining")
             game.rejoin_player(existing_player_id, request.sid, name)
         else:
+            # GET CPU PLAYER FIRST
             cpu_players = [pid for pid, p in game.players.items() if p.is_cpu]
             if cpu_players:
                 cpu_id = cpu_players[0]
+                cpu_player = game.players[cpu_id]
+
                 print(f"[CREATE] Replacing CPU {cpu_id} with player {name}")
+                print(f"[DEBUG] CPU {cpu_player.name} has {len(cpu_player.hand)} cards")
+
+                # === CRITICAL: CREATE NEW PLAYER WITH SAME ID ===
+                new_player = Player(request.sid, name, is_cpu=False)
+
+                # === CRITICAL: TRANSFER HAND FIRST (BEFORE DELETION) ===
+                print(f"[DEBUG] Transferring {len(cpu_player.hand)} cards to {name}")
+                new_player.hand = list(cpu_player.hand)  # Deep copy
+                new_player.role = cpu_player.role
+                new_player.passed = cpu_player.passed
+                new_player.finished_position = cpu_player.finished_position
+
+                print(f"[DEBUG] {name} now has {len(new_player.hand)} cards after transfer")
+
+                # === ADD TO GAME FIRST ===
+                game.players[request.sid] = new_player
+                print(f"[DEBUG] Added {name} to game.players with {len(game.players[request.sid].hand)} cards")
+
+                # === NOW DELETE CPU ===
                 del game.players[cpu_id]
+                print(f"[DEBUG] Deleted CPU {cpu_id}")
+
+                # Update player order lists
                 if cpu_id in game.player_order:
                     idx = game.player_order.index(cpu_id)
                     game.player_order[idx] = request.sid
+                    print(f"[DEBUG] Updated player_order")
+
                 if cpu_id in game.original_player_order:
                     idx = game.original_player_order.index(cpu_id)
                     game.original_player_order[idx] = request.sid
-                game.add_player(request.sid, name, is_cpu=False)
+                    print(f"[DEBUG] Updated original_player_order")
+
+                game.human_player_id = request.sid
+
+                # VERIFY
+                final_player = game.players.get(request.sid)
+                if final_player:
+                    print(f"[CREATE] ✓ VERIFIED: {name} has {len(final_player.hand)} cards")
+                else:
+                    print(f"[CREATE] ✗ ERROR: {name} not found in game.players!")
             else:
                 emit('error', {'msg': 'Game is full'})
                 return
@@ -1064,16 +1100,22 @@ def on_create(data):
             game.add_player(cpu_id, f'CPU-{i+1}', is_cpu=True)
         if game.can_start():
             game.start_round()
-    
+
     games[gid] = game
     join_room(gid)
     session['game_id'] = gid
     save_game_to_disk(game)
-    
+
     state = game.get_state()
     emit('created', {'game_id': gid, 'state': state})
     socketio.emit('update', {'state': state}, to=gid, skip_sid=request.sid)
-    
+
+    # EMIT EVENTS
+    try:
+        socketio.emit('play_made', {'player_name': name, 'cards': 'Joined game', 'action': 'join'}, to=gid)
+    except:
+        pass
+
     current = game.get_current_player()
     if current and current.is_cpu:
         socketio.emit('cpu_turn', {}, to=gid)
@@ -1278,4 +1320,4 @@ def on_cpu_play():
         game.cpu_playing = False
 
 if __name__ == '__main__':
-    socketio.run(app, debug=False, host='0.0.0.0', port=8080)
+    socketio.run(app, debug=False, host='0.0.0.0', port=5000)
