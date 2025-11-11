@@ -1,12 +1,14 @@
 # President Card Game
 
-## Added turn notification sound
+## Added collapsible play log
 
 Features:
-- Plays a beep sound when it's your turn
-- Toggle checkbox in options menu to enable/disable
-- Uses Web Audio API for sound generation
-- Sound preference persists in browser
+- Shows all plays made during the game
+- Displays player name and cards played
+- Shows pass/fold actions
+- Collapsible panel in bottom-left corner
+- Most recent plays shown at top
+- Keeps last 50 entries
 
 Deploy with:
 ```

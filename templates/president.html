@@ -936,43 +936,104 @@
         }
     </script>
 
-    <!-- Turn notification sound -->
-    <audio id="turnNotificationSound" preload="auto">
-        <source src="data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAAB9AAACABAAZGF0YQIAAAAAAA==" type="audio/wav">
-    </audio>
+    <!-- Play Log Panel -->
+    <div id="playLogContainer" style="position: fixed; left: 10px; bottom: 10px; max-width: 300px; z-index: 99; background: white; border: 2px solid #333; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+        <div id="playLogHeader" style="background: #333; color: white; padding: 10px; cursor: pointer; border-radius: 6px 6px 0 0; display: flex; justify-content: space-between; align-items: center; font-weight: bold;" onclick="togglePlayLog()">
+            <span>Play Log</span>
+            <span id="playLogToggle">▼</span>
+        </div>
+        <div id="playLogContent" style="max-height: 300px; overflow-y: auto; background: #f9f9f9; display: block;">
+            <div id="playLogEntries" style="padding: 10px; font-size: 11px; line-height: 1.6;">
+                <p style="color: #999; text-align: center;">No plays yet</p>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        #playLogContainer {
+            font-family: Arial, sans-serif;
+        }
+        .playLogEntry {
+            padding: 4px 0;
+            border-bottom: 1px solid #ddd;
+            color: #333;
+        }
+        .playLogEntry:last-child {
+            border-bottom: none;
+        }
+        .playLogPlayer {
+            font-weight: bold;
+            color: #2196F3;
+        }
+        .playLogCards {
+            color: #666;
+            margin-left: 4px;
+        }
+        .playLogPass {
+            color: #f44336;
+            font-style: italic;
+        }
+    </style>
 
     <script>
-        // Generate beep sound using Web Audio API
-        function playTurnSound() {
-            if (!document.getElementById('opt_sound_enabled').checked) {
-                return;  // Sound disabled
-            }
+        let playLog = [];
+        let playLogExpanded = true;
 
-            try {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
+        function togglePlayLog() {
+            const content = document.getElementById('playLogContent');
+            const toggle = document.getElementById('playLogToggle');
+            playLogExpanded = !playLogExpanded;
 
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-
-                oscillator.frequency.value = 800;  // 800 Hz beep
-                oscillator.type = 'sine';
-
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.5);
-            } catch (e) {
-                console.log('Audio context not available:', e);
+            if (playLogExpanded) {
+                content.style.display = 'block';
+                toggle.textContent = '▼';
+            } else {
+                content.style.display = 'none';
+                toggle.textContent = '▶';
             }
         }
 
-        // Listen for turn notification from server
+        function addPlayLogEntry(playerName, action) {
+            const entries = document.getElementById('playLogEntries');
+
+            // Remove "No plays yet" message
+            if (entries.querySelector('p')) {
+                entries.innerHTML = '';
+            }
+
+            // Create new entry
+            const entry = document.createElement('div');
+            entry.className = 'playLogEntry';
+
+            if (action.toLowerCase() === 'pass' || action.toLowerCase() === 'fold') {
+                entry.innerHTML = `<span class="playLogPlayer">${playerName}</span> <span class="playLogPass">${action}</span>`;
+            } else {
+                entry.innerHTML = `<span class="playLogPlayer">${playerName}</span><span class="playLogCards">: ${action}</span>`;
+            }
+
+            entries.insertBefore(entry, entries.firstChild);
+
+            // Keep only last 50 entries
+            while (entries.children.length > 50) {
+                entries.removeChild(entries.lastChild);
+            }
+        }
+
+        // Listen for play events from server
         if (typeof socket !== 'undefined') {
-            socket.on('your_turn', function(data) {
-                playTurnSound();
+            socket.on('play_made', function(data) {
+                if (data.action === 'pass' || data.action === 'fold') {
+                    addPlayLogEntry(data.player_name, data.action);
+                } else {
+                    addPlayLogEntry(data.player_name, data.cards);
+                }
+            });
+
+            socket.on('update', function(data) {
+                // Can extract play history from state if available
+                if (data.state && data.state.play_history) {
+                    // This would populate historical entries if available
+                }
             });
         }
     </script>
