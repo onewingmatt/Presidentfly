@@ -1099,17 +1099,7 @@ def on_play(data):
         print(f"[PLAY] Round over - starting exchange phase")
         game.start_exchange_phase()
         save_game_to_disk(game)
-        
-    # Emit play event for play log
-    cards_str = ', '.join([f"{card.rank.value[1]}{card.suit.value}" for card in meld])
-    socketio.emit('play_made', {
-        'player_name': player.name,
-        'action': 'play',
-        'cards': cards_str,
-        'timestamp': time.time()
-    }, to=gid)
-
-    socketio.emit('update', {'state': game.get_state()}, to=gid)
+        socketio.emit('update', {'state': game.get_state()}, to=gid)
         
         print(f"[PLAY] Completing exchanges...")
         game.complete_all_exchanges()
@@ -1170,15 +1160,6 @@ def on_pass():
         return
     
     save_game_to_disk(game)
-    
-    # Emit pass event for play log
-    socketio.emit('play_made', {
-        'player_name': player.name,
-        'action': 'pass',
-        'cards': 'Pass',
-        'timestamp': time.time()
-    }, to=gid)
-
     socketio.emit('update', {'state': game.get_state()}, to=gid)
     
     if result.get('round_over'):
@@ -1297,4 +1278,4 @@ def on_cpu_play():
         game.cpu_playing = False
 
 if __name__ == '__main__':
-    socketio.run(app, debug=False, host='0.0.0.0', port=5000)
+    socketio.run(app, debug=False, host='0.0.0.0', port=8080)
