@@ -1,20 +1,24 @@
 # President Card Game
 
-## COMPLETE FIX: Sound + Mute Button + Options Panel
+## FIXED: Toggle button + Working Sound + Restart
 
 Features:
+✓ "⚙ Options" button to open/close options panel
+✓ Options panel hidden by default
+✓ "🔊 Turn Sound" checkbox to mute sound
 ✓ Ding sound plays when it's your turn
-✓ "Turn Sound" checkbox to mute (enabled by default)
-✓ Wild card options in panel
-✓ Play log (collapsible)
-✓ Restart button
+✓ "🔄 Restart Hand" button to restart with options
+✓ Play log at bottom left
+✓ Console logging for debugging
 
-Options Panel (top right):
-- 2s Wild checkbox
-- Black 3s Wild checkbox
-- JD Wild checkbox
-- Turn Sound checkbox (MUTE BUTTON)
-- Restart Hand button
+How to use:
+1. Click "⚙ Options" button to open panel
+2. Toggle "🔊 Turn Sound" to mute/unmute
+3. Click "🔄 Restart Hand" to apply options
+4. Click × or toggle button again to close panel
+
+Debug:
+Open browser console (F12) to see detailed logs for sound, restart, and socket events.
 
 Deploy:
 ```
