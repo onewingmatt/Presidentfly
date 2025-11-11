@@ -1,28 +1,25 @@
-# President Card Game - TESTED & VERIFIED
+# President Card Game - FIXED!
 
-✓ ALL FEATURES TESTED BEFORE DELIVERY
+Fixed Issues:
+✓ Sound now plays when it's your turn (your_turn event emitted)
+✓ Play log now working (play_made events emitted)
+✓ Play log moved to RIGHT side
 
-Features Included:
-✓ Options panel (toggle button)
-✓ Sound notification with mute checkbox
-✓ Test sound button (click to test)
-✓ Play log (collapsible)
-✓ Restart button
-✓ All event listeners
+Server Emissions Added:
+- your_turn: Sent when it's a human player's turn
+- play_made: Sent when a play or pass happens
 
-How to Test Locally:
-```
-pip install -r requirements.txt
-python app.py
-```
-Visit http://localhost:8080
+How It Works:
+1. Player plays cards → server emits play_made → log updates
+2. Turn changes to human player → server emits your_turn → sound plays
+3. Play log appears on right side (bottom right corner)
 
-Test Sound:
-1. Click ⚙ Options button
-2. Click 🔊 Test Sound button
-3. You should hear a ding!
-
-Deploy to Fly.io:
+Deploy:
 ```
 flyctl deploy -a presidentfly --config fly.toml
 ```
+
+Test:
+1. Click ⚙ Options → Test Sound (should ding)
+2. Wait for your turn → should ding automatically
+3. Watch play log on right side update with each play
