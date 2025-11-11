@@ -935,5 +935,77 @@
             updateExchangeDisplay();
         }
     </script>
+
+    <script>
+        // ========== URL MANAGEMENT ==========
+        console.log('[URL] Checking URL parameters');
+
+        function updateURLWithGameID(gameID) {
+            if(window.history && window.history.pushState) {
+                const newUrl = window.location.protocol + "//" + window.location.host + "/?game=" + gameID;
+                window.history.pushState({gameId: gameID}, '', newUrl);
+                console.log('[URL] Updated URL to: ' + newUrl);
+            }
+        }
+
+        function getGameIDFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const gameId = params.get('game');
+            if(gameId) {
+                console.log('[URL] Found game ID in URL: ' + gameId);
+                return gameId;
+            }
+            return null;
+        }
+
+        // Store game ID globally
+        var currentGameID = getGameIDFromURL();
+        console.log('[INIT] Current game ID from URL: ' + currentGameID);
+
+        // Override socket events to update URL
+        if(typeof socket !== 'undefined') {
+            console.log('[SOCKET] Setting up URL management');
+
+            // When game is created, update URL
+            socket.on('created', function(data) {
+                console.log('[SOCKET] Game created with ID:', data.game_id);
+                currentGameID = data.game_id;
+                updateURLWithGameID(data.game_id);
+                console.log('[URL] Updated URL with new game ID: ' + data.game_id);
+            });
+
+            // When joining existing game, update URL
+            socket.on('joined', function(data) {
+                if(data.game_id) {
+                    console.log('[SOCKET] Joined game with ID:', data.game_id);
+                    currentGameID = data.game_id;
+                    updateURLWithGameID(data.game_id);
+                }
+            });
+        }
+
+        // ========== COPY GAME LINK TO CLIPBOARD ==========
+        function copyGameLinkToClipboard() {
+            if(!currentGameID) {
+                alert('Game not started yet');
+                return;
+            }
+            const gameLink = window.location.protocol + "//" + window.location.host + "/?game=" + currentGameID;
+            navigator.clipboard.writeText(gameLink).then(function() {
+                alert('Game link copied to clipboard!\n' + gameLink);
+            }).catch(function(err) {
+                alert('Could not copy link: ' + err);
+            });
+        }
+
+        // Add copy button if game exists
+        var copyBtn = document.createElement('button');
+        copyBtn.id = 'copyGameLinkBtn';
+        copyBtn.style.cssText = 'position: fixed; top: 10px; left: 10px; z-index: 102; padding: 10px 15px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;';
+        copyBtn.textContent = '📋 Copy Game Link';
+        copyBtn.addEventListener('click', copyGameLinkToClipboard);
+        document.body.appendChild(copyBtn);
+        console.log('[INIT] Added copy game link button');
+    </script>
 </body>
 </html>
