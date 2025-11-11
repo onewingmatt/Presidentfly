@@ -1114,14 +1114,7 @@ def on_play(data):
             socketio.emit('update', {'state': game.get_state()}, to=gid)
             current = game.get_current_player()
             if current and current.is_cpu:
-                    socketio.emit('play_made', {'player_name': player.name, 'cards': ', '.join([f"{c.rank.value[1]}{c.suit.value}" for c in meld]), 'action': 'play'}, to=gid)
-    try:
-        curr = game.get_current_player()
-        if curr and not curr.is_cpu:
-            socketio.emit('your_turn', {'player_id': curr.player_id}, to=gid)
-    except: pass
-
-    socketio.emit('cpu_turn', {}, to=gid)
+                socketio.emit('cpu_turn', {}, to=gid)
         return
     
     if result.get('show_2'):
@@ -1167,7 +1160,6 @@ def on_pass():
         return
     
     save_game_to_disk(game)
-        socketio.emit('play_made', {'player_name': player.name, 'cards': 'Pass', 'action': 'pass'}, to=gid)
     socketio.emit('update', {'state': game.get_state()}, to=gid)
     
     if result.get('round_over'):
