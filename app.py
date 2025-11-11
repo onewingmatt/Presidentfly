@@ -1099,7 +1099,14 @@ def on_play(data):
         print(f"[PLAY] Round over - starting exchange phase")
         game.start_exchange_phase()
         save_game_to_disk(game)
-        socketio.emit('update', {'state': game.get_state()}, to=gid)
+        socketio.emit('update', {'state': game.get_state()
+
+    # Emit your_turn for human player
+    current = game.get_current_player()
+    if current and not current.is_cpu:
+        socketio.emit('your_turn', {'player_id': current.player_id}, to=gid)
+    elif current and current.is_cpu:
+        socketio.emit('cpu_turn', {}, to=gid)}, to=gid)
         
         print(f"[PLAY] Completing exchanges...")
         game.complete_all_exchanges()

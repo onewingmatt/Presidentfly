@@ -1,24 +1,24 @@
 # President Card Game
 
-## FIXED: Toggle button + Working Sound + Restart
+## SOUND DEEP DIVE - FIXED!
 
-Features:
-✓ "⚙ Options" button to open/close options panel
-✓ Options panel hidden by default
-✓ "🔊 Turn Sound" checkbox to mute sound
-✓ Ding sound plays when it's your turn
-✓ "🔄 Restart Hand" button to restart with options
-✓ Play log at bottom left
-✓ Console logging for debugging
+Root cause found and fixed:
+- Server was NOT emitting 'your_turn' events
+- Added your_turn emission to app.py
+- Improved socket listeners in HTML
+- Added fallback from 'update' events
+- Added TEST SOUND button to verify sound works
 
-How to use:
-1. Click "⚙ Options" button to open panel
-2. Toggle "🔊 Turn Sound" to mute/unmute
-3. Click "🔄 Restart Hand" to apply options
-4. Click × or toggle button again to close panel
+Changes:
+1. app.py: Added socketio.emit('your_turn') after plays
+2. HTML: Added multiple listeners (your_turn, update, cpu_turn)
+3. HTML: Added 🔊 Test Sound button to test manually
 
-Debug:
-Open browser console (F12) to see detailed logs for sound, restart, and socket events.
+How to test:
+1. Open options panel (⚙ button)
+2. Click 🔊 Test Sound button to test sound works
+3. Toggle "🔊 Turn Sound" to mute
+4. When it's your turn, sound should play automatically
 
 Deploy:
 ```
