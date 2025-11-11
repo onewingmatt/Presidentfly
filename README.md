@@ -1,15 +1,22 @@
 # President Card Game
 
-## Sound notification with mute option
+## COMPLETE FIX: Sound + Mute Button + Options Panel
 
 Features:
-- Pleasant ding sound when it's your turn (two-note chord)
-- Mute/unmute toggle in options menu labeled "Turn Sound"
-- Uses Web Audio API for cross-browser compatibility
-- Sound checkbox defaults to ENABLED
-- No external audio files needed
+✓ Ding sound plays when it's your turn
+✓ "Turn Sound" checkbox to mute (enabled by default)
+✓ Wild card options in panel
+✓ Play log (collapsible)
+✓ Restart button
 
-Deploy with:
+Options Panel (top right):
+- 2s Wild checkbox
+- Black 3s Wild checkbox
+- JD Wild checkbox
+- Turn Sound checkbox (MUTE BUTTON)
+- Restart Hand button
+
+Deploy:
 ```
 pip install -r requirements.txt
 gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:8080 --timeout 120 app:app

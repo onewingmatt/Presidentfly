@@ -548,6 +548,205 @@
     </style>
 </head>
 <body>
+    <!-- Options Panel (Top Right) -->
+    <div id="optionsPanel" style="position: fixed; right: 10px; top: 10px; background: #f0f0f0; border: 2px solid #333; padding: 15px; border-radius: 8px; max-width: 200px; font-size: 12px; z-index: 100;">
+        <h3 style="margin-top: 0; margin-bottom: 10px; font-size: 14px;">Game Options</h3>
+
+        <div style="margin-bottom: 8px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" id="opt_twos_wild" checked style="margin-right: 6px;">
+                <strong>2s Wild</strong>
+            </label>
+        </div>
+
+        <div style="margin-bottom: 8px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" id="opt_black3s_wild" checked style="margin-right: 6px;">
+                <strong>Black 3s Wild</strong>
+            </label>
+        </div>
+
+        <div style="margin-bottom: 8px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" id="opt_jd_wild" checked style="margin-right: 6px;">
+                <strong>JD Wild</strong>
+            </label>
+        </div>
+
+        <div style="margin-bottom: 8px; border-top: 1px solid #ccc; padding-top: 8px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" id="opt_sound_enabled" checked style="margin-right: 6px;">
+                <strong>Turn Sound</strong>
+            </label>
+        </div>
+
+        <button id="restartBtn" style="width: 100%; padding: 8px; margin-top: 10px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;">
+            Restart Hand
+        </button>
+    </div>
+
+    <!-- Play Log Panel (Bottom Left) -->
+    <div id="playLogContainer" style="position: fixed; left: 10px; bottom: 10px; max-width: 300px; z-index: 99; background: white; border: 2px solid #333; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+        <div id="playLogHeader" style="background: #333; color: white; padding: 10px; cursor: pointer; border-radius: 6px 6px 0 0; display: flex; justify-content: space-between; align-items: center; font-weight: bold;" onclick="togglePlayLog()">
+            <span>Play Log</span>
+            <span id="playLogToggle">▼</span>
+        </div>
+        <div id="playLogContent" style="max-height: 300px; overflow-y: auto; background: #f9f9f9; display: block;">
+            <div id="playLogEntries" style="padding: 10px; font-size: 11px; line-height: 1.6;">
+                <p style="color: #999; text-align: center;">No plays yet</p>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        #playLogEntry {
+            font-family: Arial, sans-serif;
+        }
+        .playLogEntry {
+            padding: 4px 0;
+            border-bottom: 1px solid #ddd;
+            color: #333;
+        }
+        .playLogEntry:last-child {
+            border-bottom: none;
+        }
+        .playLogPlayer {
+            font-weight: bold;
+            color: #2196F3;
+        }
+        .playLogCards {
+            color: #666;
+            margin-left: 4px;
+        }
+        .playLogPass {
+            color: #f44336;
+            font-style: italic;
+        }
+    </style>
+
+    <script>
+        // ========== SOUND IMPLEMENTATION ==========
+        function playDingSound() {
+            const soundCheckbox = document.getElementById('opt_sound_enabled');
+            if (!soundCheckbox || !soundCheckbox.checked) {
+                console.log('[SOUND] Sound is muted');
+                return;
+            }
+
+            console.log('[SOUND] Playing ding sound...');
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const now = audioContext.currentTime;
+
+                // First note: 523 Hz (C5)
+                const osc1 = audioContext.createOscillator();
+                const gain1 = audioContext.createGain();
+                osc1.connect(gain1);
+                gain1.connect(audioContext.destination);
+                osc1.frequency.value = 523;
+                osc1.type = 'sine';
+                gain1.gain.setValueAtTime(0.3, now);
+                gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+
+                // Second note: 659 Hz (E5)
+                const osc2 = audioContext.createOscillator();
+                const gain2 = audioContext.createGain();
+                osc2.connect(gain2);
+                gain2.connect(audioContext.destination);
+                osc2.frequency.value = 659;
+                osc2.type = 'sine';
+                gain2.gain.setValueAtTime(0, now + 0.05);
+                gain2.gain.linearRampToValueAtTime(0.2, now + 0.1);
+                gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+
+                osc1.start(now);
+                osc2.start(now + 0.05);
+                osc1.stop(now + 0.6);
+                osc2.stop(now + 0.6);
+
+                console.log('[SOUND] Ding played successfully!');
+            } catch (e) {
+                console.log('[SOUND] Error:', e);
+            }
+        }
+
+        // ========== PLAY LOG IMPLEMENTATION ==========
+        let playLogExpanded = true;
+
+        function togglePlayLog() {
+            const content = document.getElementById('playLogContent');
+            const toggle = document.getElementById('playLogToggle');
+            playLogExpanded = !playLogExpanded;
+
+            if (playLogExpanded) {
+                content.style.display = 'block';
+                toggle.textContent = '▼';
+            } else {
+                content.style.display = 'none';
+                toggle.textContent = '▶';
+            }
+        }
+
+        function addPlayLogEntry(playerName, action) {
+            const entries = document.getElementById('playLogEntries');
+
+            if (entries.querySelector('p')) {
+                entries.innerHTML = '';
+            }
+
+            const entry = document.createElement('div');
+            entry.className = 'playLogEntry';
+
+            if (action.toLowerCase() === 'pass' || action.toLowerCase() === 'fold') {
+                entry.innerHTML = '<span class="playLogPlayer">' + playerName + '</span> <span class="playLogPass">' + action + '</span>';
+            } else {
+                entry.innerHTML = '<span class="playLogPlayer">' + playerName + '</span><span class="playLogCards">: ' + action + '</span>';
+            }
+
+            entries.insertBefore(entry, entries.firstChild);
+
+            while (entries.children.length > 50) {
+                entries.removeChild(entries.lastChild);
+            }
+        }
+
+        // ========== GAME EVENT LISTENERS ==========
+        if (typeof socket !== 'undefined') {
+            socket.on('your_turn', function(data) {
+                console.log('[GAME] Your turn!');
+                playDingSound();
+            });
+
+            socket.on('play_made', function(data) {
+                if (data.action === 'pass' || data.action === 'fold') {
+                    addPlayLogEntry(data.player_name, data.action);
+                } else {
+                    addPlayLogEntry(data.player_name, data.cards);
+                }
+            });
+        }
+
+        // ========== RESTART BUTTON ==========
+        if (document.getElementById('restartBtn')) {
+            document.getElementById('restartBtn').addEventListener('click', function() {
+                const twos_wild = document.getElementById('opt_twos_wild').checked;
+                const black_3s_wild = document.getElementById('opt_black3s_wild').checked;
+                const jd_wild = document.getElementById('opt_jd_wild').checked;
+
+                const game_options = {
+                    twos_wild: twos_wild,
+                    black_3s_wild: black_3s_wild,
+                    jd_wild: jd_wild
+                };
+
+                console.log('[OPTIONS] Restarting with:', game_options);
+                if (typeof socket !== 'undefined') {
+                    socket.emit('restart_hand_with_options', { game_options: game_options });
+                }
+            });
+        }
+    </script>
+
     <div class="container">
         <div class="header">
             <h1>President Card Game</h1>
@@ -933,75 +1132,6 @@
         
         function showExchangePhase() {
             updateExchangeDisplay();
-        }
-    </script>
-
-    <script>
-        // Turn notification sound implementation
-        function playDingSound() {
-            // Check if sound is enabled
-            const soundCheckbox = document.getElementById('opt_sound_enabled');
-            if (!soundCheckbox || !soundCheckbox.checked) {
-                console.log('Sound is muted');
-                return;
-            }
-
-            try {
-                // Use Web Audio API to create a ding sound
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-                // Create oscillators for a pleasant ding sound (2-note chord)
-                const now = audioContext.currentTime;
-
-                // First note: 523 Hz (C5)
-                const osc1 = audioContext.createOscillator();
-                const gain1 = audioContext.createGain();
-                osc1.connect(gain1);
-                gain1.connect(audioContext.destination);
-                osc1.frequency.value = 523;
-                osc1.type = 'sine';
-                gain1.gain.setValueAtTime(0.3, now);
-                gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
-
-                // Second note: 659 Hz (E5) - starts slightly after first
-                const osc2 = audioContext.createOscillator();
-                const gain2 = audioContext.createGain();
-                osc2.connect(gain2);
-                gain2.connect(audioContext.destination);
-                osc2.frequency.value = 659;
-                osc2.type = 'sine';
-                gain2.gain.setValueAtTime(0, now + 0.05);
-                gain2.gain.linearRampToValueAtTime(0.2, now + 0.1);
-                gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
-
-                // Start both oscillators
-                osc1.start(now);
-                osc2.start(now + 0.05);
-
-                // Stop both oscillators
-                osc1.stop(now + 0.6);
-                osc2.stop(now + 0.6);
-
-                console.log('Ding sound played!');
-            } catch (e) {
-                console.log('Audio context error:', e);
-            }
-        }
-
-        // Listen for your turn event
-        if (typeof socket !== 'undefined') {
-            socket.on('your_turn', function(data) {
-                console.log('Your turn event received');
-                playDingSound();
-            });
-        }
-
-        // Also listen for cpu_turn to know when the game is active
-        if (typeof socket !== 'undefined') {
-            socket.on('cpu_turn', function(data) {
-                // Optionally play sound when CPU plays (if you want)
-                // playDingSound();
-            });
         }
     </script>
 </body>
