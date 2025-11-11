@@ -1099,16 +1099,7 @@ def on_play(data):
         print(f"[PLAY] Round over - starting exchange phase")
         game.start_exchange_phase()
         save_game_to_disk(game)
-        
-    # Emit play_made for play log
-    cards_str = ', '.join([f"{c.rank.value[1]}{c.suit.value}" for c in meld])
-    socketio.emit('play_made', {
-        'player_name': player.name,
-        'action': 'play',
-        'cards': cards_str
-    }, to=gid)
-
-    socketio.emit('update', {'state': game.get_state()}, to=gid)
+        socketio.emit('update', {'state': game.get_state()}, to=gid)
         
         print(f"[PLAY] Completing exchanges...")
         game.complete_all_exchanges()
@@ -1151,11 +1142,24 @@ def on_play(data):
         if current and current.is_cpu:
             socketio.emit('cpu_turn', {}, to=gid)
 
-    # Emit your_turn for human player's turn
-    if game and not game.cpu_playing:
+    # Emit play_made for play log
+    try:
+        cards_str = ', '.join([f"{c.rank.value[1]}{c.suit.value}" for c in meld])
+        socketio.emit('play_made', {
+            'player_name': player.name,
+            'action': 'play',
+            'cards': cards_str
+        }, to=gid)
+    except:
+        pass
+
+    # Check current player and emit your_turn if human
+    try:
         current = game.get_current_player()
         if current and not current.is_cpu:
-            socketio.emit('your_turn', {'player_id': current.player_id}, to=gid)
+            socketio.emit('your_turn', {'player_id': current.player_id, 'player_name': current.name}, to=gid)
+    except:
+        pass
 
 @socketio.on('pass')
 def on_pass():
@@ -1175,13 +1179,15 @@ def on_pass():
         return
     
     save_game_to_disk(game)
-    
-    # Emit pass_made for play log
-    socketio.emit('play_made', {
-        'player_name': player.name,
-        'action': 'pass',
-        'cards': 'Pass'
-    }, to=gid)
+        # Emit pass_made for play log
+    try:
+        socketio.emit('play_made', {
+            'player_name': player.name,
+            'action': 'pass',
+            'cards': 'Pass'
+        }, to=gid)
+    except:
+        pass
 
     socketio.emit('update', {'state': game.get_state()}, to=gid)
     
@@ -1301,4 +1307,4 @@ def on_cpu_play():
         game.cpu_playing = False
 
 if __name__ == '__main__':
-    socketio.run(app, debug=False, host='0.0.0.0', port=5000)
+    socketio.run(app, debug=False, host='0.0.0.0', port=8080)
