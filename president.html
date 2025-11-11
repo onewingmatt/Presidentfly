@@ -935,5 +935,74 @@
             updateExchangeDisplay();
         }
     </script>
+
+    <script>
+        // Turn notification sound implementation
+        function playDingSound() {
+            // Check if sound is enabled
+            const soundCheckbox = document.getElementById('opt_sound_enabled');
+            if (!soundCheckbox || !soundCheckbox.checked) {
+                console.log('Sound is muted');
+                return;
+            }
+
+            try {
+                // Use Web Audio API to create a ding sound
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+                // Create oscillators for a pleasant ding sound (2-note chord)
+                const now = audioContext.currentTime;
+
+                // First note: 523 Hz (C5)
+                const osc1 = audioContext.createOscillator();
+                const gain1 = audioContext.createGain();
+                osc1.connect(gain1);
+                gain1.connect(audioContext.destination);
+                osc1.frequency.value = 523;
+                osc1.type = 'sine';
+                gain1.gain.setValueAtTime(0.3, now);
+                gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+
+                // Second note: 659 Hz (E5) - starts slightly after first
+                const osc2 = audioContext.createOscillator();
+                const gain2 = audioContext.createGain();
+                osc2.connect(gain2);
+                gain2.connect(audioContext.destination);
+                osc2.frequency.value = 659;
+                osc2.type = 'sine';
+                gain2.gain.setValueAtTime(0, now + 0.05);
+                gain2.gain.linearRampToValueAtTime(0.2, now + 0.1);
+                gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+
+                // Start both oscillators
+                osc1.start(now);
+                osc2.start(now + 0.05);
+
+                // Stop both oscillators
+                osc1.stop(now + 0.6);
+                osc2.stop(now + 0.6);
+
+                console.log('Ding sound played!');
+            } catch (e) {
+                console.log('Audio context error:', e);
+            }
+        }
+
+        // Listen for your turn event
+        if (typeof socket !== 'undefined') {
+            socket.on('your_turn', function(data) {
+                console.log('Your turn event received');
+                playDingSound();
+            });
+        }
+
+        // Also listen for cpu_turn to know when the game is active
+        if (typeof socket !== 'undefined') {
+            socket.on('cpu_turn', function(data) {
+                // Optionally play sound when CPU plays (if you want)
+                // playDingSound();
+            });
+        }
+    </script>
 </body>
 </html>

@@ -1101,6 +1101,7 @@ def on_play(data):
         save_game_to_disk(game)
         socketio.emit('update', {'state': game.get_state()}, to=gid)
         
+        print(f"[PLAY] Completing exchanges...")
         game.complete_all_exchanges()
         
         save_game_to_disk(game)
